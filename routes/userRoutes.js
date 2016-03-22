@@ -3,6 +3,9 @@
 var User = require('../models/user');
 var File = require('../models/file');
 var express = require('express');
+var AWS = require('aws-sdk');
+var s3 = new AWS.S3();
+
 
 module.exports = (router) => {
 
@@ -27,16 +30,21 @@ module.exports = (router) => {
         res.json(user);
     });
   })
-  // creates new user
+  // creates new user and bucket
   .post('/users', (req, res) => {
     console.log('users POST route hit');
     var user = new User(req.body);
+    var bucketParams = {Bucket: req.body.name};
     user.save(function(err, data) {
       if (err) {
         console.log(err);
         res.status(500).json(err);
       }
       res.json(data);
+    });
+    s3.createBucket(bucketParams, function(err, data) {
+      if (err) console.log(err, err.stack);
+      else console.log(data);
     });
   })
   //updates a specific user
@@ -55,15 +63,20 @@ module.exports = (router) => {
       }
     });
   })
-  //deletes specific user
+  //deletes specific user and user's bucket
   .delete('/users/:user', (req, res) => {
     console.log('/users DELETE route hit');
     var userId = req.params.user;
-    User.findOne({_id: userId}, function(err, doc) {
+    User.findOne({_id: userId}, function(err, user) {
       if (err){
         res.status(500).json(err);
       }
-      doc.remove();
+      var userName = user.name;
+      s3.deleteBucket({Bucket: userName}, function(err, data) {
+        if (err) console.log(err, err.stack);
+        else console.log(userName + "deleted");
+      });
+      user.remove();
       res.json({msg: 'User was removed'});
     });
   });
