@@ -11,10 +11,10 @@ var port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-var userRouter = require(__dirname + '/routes/userRoutes');
-var fileRouter = require(__dirname + '/routes/fileRoutes');
-app.use('/users', userRouter);
-app.use('/file', fileRouter);
+let router = express.Router();
+require(__dirname + '/routes/userRoutes')(router);
+require(__dirname + '/routes/fileRoutes')(router);
+app.use('/', router);
 
 app.listen(port, function() {
   console.log('Server listening on port ' + (port || 3000));
